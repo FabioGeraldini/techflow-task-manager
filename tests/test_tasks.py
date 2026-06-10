@@ -6,7 +6,6 @@ import src.database as database
 @pytest.fixture
 def client():
     """Cria cliente de teste com banco em memória compartilhado."""
-    # Cria uma conexão persistente em memória e a injeta no módulo
     conn = sqlite3.connect(':memory:', check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute('''
@@ -19,11 +18,14 @@ def client():
     ''')
     conn.commit()
 
-    # Substitui a função get_connection para sempre usar essa conexão
     database.get_connection = lambda: conn
     flask_app.app.config['TESTING'] = True
 
     with flask_app.app.test_client() as client:
+        # Limpa a tabela antes de cada teste para garantir isolamento
+        conn.execute('DELETE FROM tasks')
+        conn.execute('DELETE FROM sqlite_sequence WHERE name="tasks"')
+        conn.commit()
         yield client
 
     conn.close()
