@@ -1,7 +1,7 @@
 import pytest
 import sqlite3
+import src.database as _db
 import src.app as flask_app
-import src.database as database
 
 def criar_banco():
     """Cria um banco em memória com a tabela de tarefas."""
@@ -22,7 +22,7 @@ def criar_banco():
 def client():
     """Cada teste recebe um banco zerado e isolado."""
     conn = criar_banco()
-    database.get_connection = lambda: conn
+    _db.get_connection = lambda: conn
     flask_app.app.config['TESTING'] = True
 
     with flask_app.app.test_client() as c:
@@ -64,8 +64,7 @@ def test_listar_tarefas_com_dados(client):
     resposta = client.get('/tasks')
     dados = resposta.get_json()
     assert len(dados) >= 1
-    titulos = [t['title'] for t in dados]
-    assert 'Tarefa listada' in titulos
+    assert any(t['title'] == 'Tarefa listada' for t in dados)
 
 # ── Testes de UPDATE ─────────────────────────────────────
 
