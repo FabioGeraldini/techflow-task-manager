@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify
-from database import get_connection, init_db
+try:
+    from database import get_connection, init_db
+except ImportError:
+    from src.database import get_connection, init_db
 
 app = Flask(__name__)
 
