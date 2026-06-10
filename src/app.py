@@ -6,9 +6,6 @@ except ImportError:
 
 app = Flask(__name__)
 
-# Inicializa o banco ao subir o servidor
-init_db()
-
 # ── CREATE ──────────────────────────────────────────────
 @app.route('/tasks', methods=['POST'])
 def create_task():
@@ -85,4 +82,5 @@ def delete_task(task_id):
     return jsonify({'message': f'Tarefa {task_id} removida com sucesso'})
 
 if __name__ == '__main__':
+    init_db()
     app.run(debug=True)
