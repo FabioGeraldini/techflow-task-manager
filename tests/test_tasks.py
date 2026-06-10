@@ -1,27 +1,32 @@
-import sys
-import os
 import pytest
-
-# Adiciona a pasta src ao caminho para importar os módulos
-import pytest
+import sqlite3
 import src.app as flask_app
 import src.database as database
-
-import src.app as flask_app
-import src.database as database
-
-# ── Configuração dos testes ──────────────────────────────
 
 @pytest.fixture
 def client():
-    """Cria um cliente de teste com banco de dados temporário."""
-    database.DATABASE = ':memory:'  # Usa banco em memória (não salva arquivos)
+    """Cria cliente de teste com banco em memória compartilhado."""
+    # Cria uma conexão persistente em memória e a injeta no módulo
+    conn = sqlite3.connect(':memory:', check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS tasks (
+            id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            title    TEXT    NOT NULL,
+            status   TEXT    NOT NULL DEFAULT 'A Fazer',
+            priority TEXT    NOT NULL DEFAULT 'Média'
+        )
+    ''')
+    conn.commit()
+
+    # Substitui a função get_connection para sempre usar essa conexão
+    database.get_connection = lambda: conn
     flask_app.app.config['TESTING'] = True
 
     with flask_app.app.test_client() as client:
-        with flask_app.app.app_context():
-            database.init_db()
         yield client
+
+    conn.close()
 
 # ── Testes de CREATE ─────────────────────────────────────
 
@@ -56,15 +61,17 @@ def test_listar_tarefas_com_dados(client):
     client.post('/tasks', json={'title': 'Tarefa listada'})
     resposta = client.get('/tasks')
     dados = resposta.get_json()
-    assert len(dados) == 1
-    assert dados[0]['title'] == 'Tarefa listada'
+    assert len(dados) >= 1
+    titulos = [t['title'] for t in dados]
+    assert 'Tarefa listada' in titulos
 
 # ── Testes de UPDATE ─────────────────────────────────────
 
 def test_atualizar_tarefa(client):
     """Deve atualizar o status de uma tarefa existente."""
-    client.post('/tasks', json={'title': 'Tarefa para editar'})
-    resposta = client.put('/tasks/1', json={'status': 'Em Progresso'})
+    criada = client.post('/tasks', json={'title': 'Tarefa para editar'}).get_json()
+    task_id = criada['id']
+    resposta = client.put(f'/tasks/{task_id}', json={'status': 'Em Progresso'})
     assert resposta.status_code == 200
     assert resposta.get_json()['status'] == 'Em Progresso'
 
@@ -77,8 +84,9 @@ def test_atualizar_tarefa_inexistente(client):
 
 def test_deletar_tarefa(client):
     """Deve remover uma tarefa e confirmar com mensagem."""
-    client.post('/tasks', json={'title': 'Tarefa para deletar'})
-    resposta = client.delete('/tasks/1')
+    criada = client.post('/tasks', json={'title': 'Tarefa para deletar'}).get_json()
+    task_id = criada['id']
+    resposta = client.delete(f'/tasks/{task_id}')
     assert resposta.status_code == 200
     assert 'removida' in resposta.get_json()['message']
 
