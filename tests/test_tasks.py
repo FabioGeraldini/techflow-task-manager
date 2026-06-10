@@ -3,10 +3,12 @@ import os
 import pytest
 
 # Adiciona a pasta src ao caminho para importar os módulos
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+import pytest
+import src.app as flask_app
+import src.database as database
 
-import app as flask_app
-import database
+import src.app as flask_app
+import src.database as database
 
 # ── Configuração dos testes ──────────────────────────────
 
