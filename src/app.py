@@ -1,8 +1,5 @@
+import src.database as _db
 from flask import Flask, request, jsonify
-try:
-    from database import get_connection, init_db
-except ImportError:
-    from src.database import get_connection, init_db
 
 app = Flask(__name__)
 
@@ -18,7 +15,7 @@ def create_task():
     if not title:
         return jsonify({'error': 'O título é obrigatório'}), 400
 
-    conn = get_connection()
+    conn = _db.get_connection()
     cursor = conn.execute(
         'INSERT INTO tasks (title, status, priority) VALUES (?, ?, ?)',
         (title, status, priority)
@@ -33,10 +30,9 @@ def create_task():
 @app.route('/tasks', methods=['GET'])
 def list_tasks():
     """Retorna todas as tarefas cadastradas."""
-    conn = get_connection()
+    conn = _db.get_connection()
     tasks = conn.execute('SELECT * FROM tasks').fetchall()
     conn.close()
-
     return jsonify([dict(t) for t in tasks])
 
 # ── UPDATE ───────────────────────────────────────────────
@@ -44,7 +40,7 @@ def list_tasks():
 def update_task(task_id):
     """Atualiza título, status ou prioridade de uma tarefa."""
     data = request.get_json()
-    conn = get_connection()
+    conn = _db.get_connection()
 
     task = conn.execute('SELECT * FROM tasks WHERE id = ?', (task_id,)).fetchone()
     if not task:
@@ -61,14 +57,13 @@ def update_task(task_id):
     )
     conn.commit()
     conn.close()
-
     return jsonify({'id': task_id, 'title': title, 'status': status, 'priority': priority})
 
 # ── DELETE ───────────────────────────────────────────────
 @app.route('/tasks/<int:task_id>', methods=['DELETE'])
 def delete_task(task_id):
     """Remove uma tarefa pelo ID."""
-    conn = get_connection()
+    conn = _db.get_connection()
 
     task = conn.execute('SELECT * FROM tasks WHERE id = ?', (task_id,)).fetchone()
     if not task:
@@ -78,9 +73,8 @@ def delete_task(task_id):
     conn.execute('DELETE FROM tasks WHERE id = ?', (task_id,))
     conn.commit()
     conn.close()
-
     return jsonify({'message': f'Tarefa {task_id} removida com sucesso'})
 
 if __name__ == '__main__':
-    init_db()
+    _db.init_db()
     app.run(debug=True)
