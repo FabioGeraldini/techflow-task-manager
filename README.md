@@ -45,6 +45,20 @@ techflow-task-manager/
 ├── tests/        # Testes automatizados
 ├── docs/         # Documentação e diagramas UML
 └── README.md
+
+## 🔀 Mudança de Escopo
+
+**Data:** Junho/2025  
+**Alteração:** Adição de filtro de tarefas por prioridade  
+
+**Justificativa:** Durante o desenvolvimento, o cliente (startup de logística LogiRun)
+identificou a necessidade de visualizar rapidamente apenas as tarefas críticas.
+Por isso, foi adicionado um endpoint `GET /tasks/filter?priority=Alta` que permite
+filtrar tarefas por nível de prioridade (Alta, Média ou Baixa).
+
+Essa mudança foi incorporada ao Kanban com um novo card e implementada sem
+quebrar nenhuma funcionalidade existente, demonstrando a flexibilidade da
+metodologia Kanban para absorver alterações de escopo.
 ## 🔄 Metodologia
 
 Este projeto adota a metodologia **Kanban**, com o quadro de tarefas gerenciado
