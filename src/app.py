@@ -72,3 +72,19 @@ def delete_task(task_id):
 if __name__ == '__main__':
     _db.init_db()
     app.run(debug=True)
+
+# ── FILTRO POR PRIORIDADE (mudança de escopo) ────────────
+@app.route('/tasks/filter', methods=['GET'])
+def filter_tasks():
+    """Retorna tarefas filtradas por prioridade (Alta, Média ou Baixa)."""
+    priority = request.args.get('priority', '').strip()
+
+    if not priority:
+        return jsonify({'error': 'Informe o parâmetro priority'}), 400
+
+    conn  = _db.get_connection()
+    tasks = conn.execute(
+        'SELECT * FROM tasks WHERE priority = ?', (priority,)
+    ).fetchall()
+
+    return jsonify([dict(t) for t in tasks])
